@@ -10,11 +10,18 @@ RUN sed -i 's/deb.debian.org/mirrors.163.com/g' /etc/apt/sources.list && sed -i 
 
 ARG trinitycore_branch=3.3.5
 ARG trinitycore_git=https://hub.fastgit.org/TrinityCore/TrinityCore.git
-
+ARG trinitycore_bots_git=https://hub.fastgit.org/trickerer/Trinity-Bots.git
 
 RUN cd ~/ && \
+	git clone --depth 1 $trinitycore_bots_git && \
 	git clone -b $trinitycore_branch --depth 1 $trinitycore_git && \
 	cd ~/TrinityCore && \
+	cp ~/Trinity-Bots/NPCBots.patch . && \
+	mv ~/Trinity-Bots/SQL sql/Trinity-Bots && \
+	cp sql/Trinity-Bots/updates/characters/* sql/updates/characters/$trinitycore_branch && \
+	cp sql/Trinity-Bots/updates/world/* sql/updates/world/$trinitycore_branch && \
+	rm -rf ~/Trinity-Bots && \
+	patch -p1 < NPCBots.patch && \
 	mkdir build && \
 	cd build && \
 	cmake ../ -DCMAKE_INSTALL_PREFIX=/server && \
@@ -43,7 +50,6 @@ RUN mkdir ~/unrar && \
 
 RUN sed -i "s/\/var\/lib\/mysql/\/appdata\/db_data/g" /etc/mysql/mariadb.conf.d/50-server.cnf
 
-
 RUN apt-get remove -y git clang cmake make gcc g++ libmariadbclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev \
 		libboost-all-dev mariadb-server p7zip default-libmysqlclient-dev wget
 
@@ -53,4 +59,4 @@ COPY entrypoint.sh /
 
 RUN chmod +x entrypoint.sh
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["sh", "./entrypoint.sh"]
