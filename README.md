@@ -44,11 +44,11 @@ docker build -t wow:3.3.5 -f TrinityCore-3.3.5/Dockerfile TrinityCore-3.3.5;
 
 ```bash
 docker run --rm -it \
-	-v /wow-docker/app:/appdata \
-	--name wow \
-	-p 8085:8085 -p 3724:3724 -p 3306:3306 \
-	-e EXTERNAL_ADDRESS=127.0.0.1 \
-	wow:3.3.5
+    -v /wow-docker/app:/appdata \
+    --name wow \
+    -p 8085:8085 -p 3724:3724 -p 3306:3306 \
+    -e EXTERNAL_ADDRESS=127.0.0.1 \
+    wow:3.3.5
 ```
 
 ### 进阶版
@@ -63,9 +63,14 @@ docker build -t wow:3.3.5-bot -f TrinityCore-Bot-3.3.5/Dockerfile TrinityCore-Bo
 
 ```bash
 docker run --rm -it \
-	-v /wow-docker/app:/appdata \
-	--name wow \
-	-p 8085:8085 -p 3724:3724 -p 3306:3306 \
-	-e EXTERNAL_ADDRESS=127.0.0.1 \
-	wow:3.3.5-bot
+    -v /wow-docker/app:/appdata \
+    --name wow \
+    -p 8085:8085 -p 3724:3724 -p 3306:3306 \
+    -e EXTERNAL_ADDRESS=127.0.0.1 \
+    wow:3.3.5-bot
 ```
+
+# 申明
+
+1. 请勿使用在商业用途中。
+2. 项目为开源项目,仅供技术探讨使用。
