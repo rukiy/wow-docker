@@ -43,6 +43,7 @@ if [ "$ALL_IN_ONE" = true ] && [ -z "$1" ]; then
 	# Start with a number of checks to see if the server is initialized, starting with the WoW client data.
 	# If the data folder exists and has anything in it then we assume a data check has been performed.
 	[ ! -d "/appdata/client_data" ] && mkdir /appdata/client_data
+	
 	if [ -z "$(ls -A /appdata/client_data)" ]; then
 		# We need to populate the data directory using the WoW client found in /appdata/client.
 		[ ! -d "/appdata/client" ] && mkdir /appdata/client

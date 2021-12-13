@@ -1,11 +1,13 @@
 #!/bin/bash
 
-db_init() {
+function db_init {
 	echo "Initializing database"
 	cp ~/TrinityCore/sql/create/create_mysql.sql /tmp
 	sed -i "s/'trinity'@'localhost'/'$MYSQL_USER'@'$MYSQL_USER_HOST'/g" /tmp/create_mysql.sql
 	sed -i "s/IDENTIFIED BY 'trinity'/IDENTIFIED BY '$MYSQL_PASSWORD'/g" /tmp/create_mysql.sql
+
 	mysql -h$MYSQL_HOST -uroot -P$MYSQL_PORT -p$MYSQL_ROOT_PASSWORD < /tmp/create_mysql.sql
+	
 	rm -f /tmp/create_mysql.sql
 }
 
@@ -41,7 +43,7 @@ if [ "$ALL_IN_ONE" = true ] && [ -z "$1" ]; then
 	# Start with a number of checks to see if the server is initialized, starting with the WoW client data.
 	# If the data folder exists and has anything in it then we assume a data check has been performed.
 	[ ! -d "/appdata/client_data" ] && mkdir /appdata/client_data
-
+	
 	if [ -z "$(ls -A /appdata/client_data)" ]; then
 		# We need to populate the data directory using the WoW client found in /appdata/client.
 		[ ! -d "/appdata/client" ] && mkdir /appdata/client
@@ -72,6 +74,7 @@ if [ "$ALL_IN_ONE" = true ] && [ -z "$1" ]; then
 	if [ ! -d "/appdata/db_data" ]; then
 		echo "The DB data directory doesn't exist.  Creating and seeding with MySQL data."
 		cp -a /var/lib/mysql /appdata/db_data
+		sh /appdata/kv /etc/mysql/mariadb.conf.d/50-server.cnf bind-address 0.0.0.0
 		DB_NEEDS_SECURE=true
 	fi
 
@@ -80,10 +83,14 @@ if [ "$ALL_IN_ONE" = true ] && [ -z "$1" ]; then
 	if [ "$DB_NEEDS_SECURE" = true ]; then
 		echo "Database is new.  Securing with root password."
 		mysqladmin -h $MYSQL_HOST -u root password $MYSQL_ROOT_PASSWORD
+		echo "Grant all privileges for root@%"
+		mysql -h$MYSQL_HOST -uroot -P$MYSQL_PORT -p$MYSQL_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'root' WITH GRANT OPTION;"
+		echo "Grant all privileges for root@localhost"
+		mysql -h$MYSQL_HOST -uroot -P$MYSQL_PORT -p$MYSQL_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY 'root' WITH GRANT OPTION;"
 	fi
 
 	WORLD_EXISTS=`mysql -h$MYSQL_HOST -uroot -P$MYSQL_PORT -p$MYSQL_ROOT_PASSWORD -e "show databases" | grep world | wc -l`
-	if [ "$WORLD_EXISTS" = 0 ]; then
+	if [ "$WORLD_EXISTS" == 0 ]; then
 		echo "Database is empty.  Initializing."
 		db_init
 		echo "Applying auth database schema..."
@@ -134,19 +141,19 @@ if [ "$ALL_IN_ONE" = true ] && [ -z "$1" ]; then
 	exit 0
 fi
 
-if [ "$1" = "--worldserver" ]; then
+if [ "$1" == "--worldserver" ]; then
 	echo "Initiating world server"
 	cd /server/bin && ./worldserver -c /config/worldserver.conf
 	exit 0
 fi
 
-if [ "$1" = "--authserver" ]; then
+if [ "$1" == "--authserver" ]; then
 	echo "Initiating auth server"
 	cd /server/bin && ./authserver -c /config/authserver.conf
 	exit 0
 fi
 
-if [ "$1" = "--builddata" ]; then
+if [ "$1" == "--builddata" ]; then
 	echo "Building data from WoW client"
 	if [ ! -d "/wowclient" ]; then
 		echo "The WoW client must be mounted under /wowclient in order to extract data"
@@ -172,7 +179,7 @@ if [ "$1" = "--builddata" ]; then
 	exit 0
 fi
 
-if [ "$1" = "--dbinit" ]; then
+if [ "$1" == "--dbinit" ]; then
 	db_init
 	exit 0
 fi

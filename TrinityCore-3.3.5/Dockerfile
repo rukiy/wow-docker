@@ -3,7 +3,7 @@ FROM debian:10
 RUN sed -i 's/deb.debian.org/mirrors.163.com/g' /etc/apt/sources.list && sed -i 's/security.debian.org/mirrors.163.com/g' /etc/apt/sources.list && \
 	apt-get update && \
 	apt-get install -y git clang cmake make gcc g++ libmariadbclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev \
-			libboost-all-dev mariadb-server p7zip default-libmysqlclient-dev wget curl jq && \
+			libboost-all-dev mariadb-server p7zip default-libmysqlclient-dev curl jq && \
 	update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100 && \
 	update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang 100 && \
 	rm -rf /var/lib/apt/lists/*
@@ -26,26 +26,17 @@ RUN cd ~/ && \
 
 RUN mkdir ~/TDB && \
 	cd ~/TDB && \
-	wget -O TDB_full_world_335.7z `curl -s https://api.github.com/repos/TrinityCore/TrinityCore/releases | jq -r "first(.[]|select(.target_commitish | test(\"3.3.5\")) )| .assets[0].browser_download_url"` && \
+	curl -o TDB_full_world_335.7z 'https://ghproxy.fsou.cc/'`curl -s https://api.github.com/repos/TrinityCore/TrinityCore/releases | jq -r "first(.[]|select(.target_commitish | test(\"3.3.5\")) )| .assets[0].browser_download_url"` && \
 	7zr x TDB_full_world_335.7z && \
 	mv *.sql /server/bin && \
 	cd / && \
-	rm -rf ~/TDB && \
-RUN mkdir ~/unrar && \
-	cd ~/unrar && \
-	wget http://www.rarlab.com/rar/unrarsrc-5.8.3.tar.gz && \
-	tar zxvf unrarsrc-5.8.3.tar.gz && \
-	cd unrar && \
-	make -f makefile && \
-	install -v -m755 unrar /usr/bin && \
-	cd / && \
-	rm -rf ~/unrar
+	rm -rf ~/TDB
 
 RUN sed -i "s/\/var\/lib\/mysql/\/appdata\/db_data/g" /etc/mysql/mariadb.conf.d/50-server.cnf
 
 
 RUN apt-get remove -y git clang cmake make gcc g++ libmariadbclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev \
-		libboost-all-dev mariadb-server p7zip default-libmysqlclient-dev wget
+		libboost-all-dev mariadb-server p7zip default-libmysqlclient-dev curl jq
 
 VOLUME /appdata
 
