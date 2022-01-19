@@ -1,5 +1,11 @@
 #!/bin/bash
 
+function keyValue_replace {
+	oldValue=`cat $1 | grep ^$2.*= | sed "s/$2.*=//g"` &&
+	echo "For $2,[$oldValue] will be modified to [$3]"
+	sed -i "s|$2.*=$oldValue|$2=$3|g" $1
+}
+
 function db_init {
 	echo "Initializing database"
 	cp ~/TrinityCore/sql/create/create_mysql.sql /tmp
@@ -74,7 +80,7 @@ if [ "$ALL_IN_ONE" = true ] && [ -z "$1" ]; then
 	if [ ! -d "/appdata/db_data" ]; then
 		echo "The DB data directory doesn't exist.  Creating and seeding with MySQL data."
 		cp -a /var/lib/mysql /appdata/db_data
-		sh /appdata/kv /etc/mysql/mariadb.conf.d/50-server.cnf bind-address 0.0.0.0
+		key_value_replace /etc/mysql/mariadb.conf.d/50-server.cnf bind-address 0.0.0.0
 		DB_NEEDS_SECURE=true
 	fi
 
