@@ -17,8 +17,38 @@ function db_init {
 	rm -f /tmp/create_mysql.sql
 }
 
+function client_data_init {
+	echo "Initializing client_data"
+	if [ ! -f "/appdata/data.7z" ]; then
+		echo "Download client_data"
+		curl -o /appdata/data.7z https://ghproxy.com/https://github.com/rukiy/wow-docker/releases/download/3.3.5/data.7z
+	fi
+	echo "Extracting client_data"
+	7zr x /appdata/data.7z -o/appdata/client_data
+}
+
+function extracting_data {	
+	echo "Extracting data from WoW client..."
+	cd /appdata/client && \
+		/server/bin/mapextractor && \
+		cp -r dbc maps /appdata/client_data && \
+		/server/bin/vmap4extractor && \
+		mkdir vmaps && \
+		/server/bin/vmap4assembler Buildings vmaps && \
+		cp -r vmaps /appdata/client_data && \
+		mkdir mmaps && \
+		/server/bin/mmaps_generator && \
+		cp -r mmaps /appdata/client_data && \
+		cp -r Cameras /appdata/client_data && \
+		rm -rf dbc Cameras maps Buildings vmaps mmaps
+	echo "Data extraction complete."
+}
+
 # Initialize variables
 ALL_IN_ONE=true
+if [ -z "$mirror" ]; then
+	MYSQL_USER="trinity"
+fi
 if [ -z "$MYSQL_USER" ]; then
 	MYSQL_USER="trinity"
 fi
@@ -49,30 +79,17 @@ if [ "$ALL_IN_ONE" = true ] && [ -z "$1" ]; then
 	# Start with a number of checks to see if the server is initialized, starting with the WoW client data.
 	# If the data folder exists and has anything in it then we assume a data check has been performed.
 	[ ! -d "/appdata/client_data" ] && mkdir /appdata/client_data
-	
+
 	if [ -z "$(ls -A /appdata/client_data)" ]; then
-		# We need to populate the data directory using the WoW client found in /appdata/client.
-		[ ! -d "/appdata/client" ] && mkdir /appdata/client
-		if [ -z "$(ls -A /appdata/client)" ]; then
-			echo "Data needs to be compiled from the WoW client but the client cannot be found."
-			echo "Copy the contents of the WoW client into your app data's /client directory, then re-run this."
-			exit 1
-		fi
-		
-		echo "Extracting data from WoW client..."
-		cd /appdata/client && \
-			/server/bin/mapextractor && \
-			cp -r dbc maps /appdata/client_data && \
-			/server/bin/vmap4extractor && \
-			mkdir vmaps && \
-			/server/bin/vmap4assembler Buildings vmaps && \
-			cp -r vmaps /appdata/client_data && \
-			mkdir mmaps && \
-			/server/bin/mmaps_generator && \
-			cp -r mmaps /appdata/client_data && \
-			cp -r Cameras /appdata/client_data && \
-			rm -rf dbc Cameras maps Buildings vmaps mmaps
-		echo "Data extraction complete."
+		# We need to populate the data directory using the WoW client found in /appdata/client_data.
+		[ ! -d "/appdata/client_data" ] && mkdir /appdata/client_data
+
+		client_data_init
+		# if [ -z "$(ls -A /appdata/client)" ]; then
+		# 	echo "Data needs to be compiled from the WoW client but the client cannot be found." 
+		# 	echo "Copy the contents of the WoW client into your app data's /client directory, then re-run this."
+			
+		# fi
 	fi
 
 	# Check if the database data directory exists, and initialize it if not.
@@ -80,7 +97,8 @@ if [ "$ALL_IN_ONE" = true ] && [ -z "$1" ]; then
 	if [ ! -d "/appdata/db_data" ]; then
 		echo "The DB data directory doesn't exist.  Creating and seeding with MySQL data."
 		cp -a /var/lib/mysql /appdata/db_data
-		keyValue_replace /etc/mysql/mariadb.conf.d/50-server.cnf bind-address 0.0.0.0
+		keyValue_replace /etc/mysql/mariadb.conf.d/50-server.cnf datadir /appdata/db_data
+		keyValue_replace /etc/mysql/mariadb.conf.d/50-server.cnf bind-address 0.0.0.0  
 		DB_NEEDS_SECURE=true
 	fi
 
